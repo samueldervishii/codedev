@@ -1,0 +1,12 @@
+{
+  "extends": "./packages/tsconfig/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@devhub/shared": ["./packages/shared/src"],
+      "@devhub/shared/*": ["./packages/shared/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "**/dist", "**/node_modules"]
+}

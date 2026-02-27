@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* Purple/Violet brand — distinct from Reddit's orange */
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+
+  --color-upvote: #22c55e;
+  --color-downvote: #ef4444;
+
+  --color-surface: #111827;
+  --color-surface-hover: #1f2937;
+  --color-border: #1f2937;
+}
+
+body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
