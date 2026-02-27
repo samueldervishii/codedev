@@ -4,12 +4,15 @@ import { useAllPosts } from '../hooks/usePosts';
 import { PostCard } from '../components/post/PostCard';
 import { PostSortBar } from '../components/post/PostSortBar';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { Flame } from 'lucide-react';
 import type { Post } from '@devhub/shared';
 
 export function TrendingPage() {
   const [sort, setSort] = useState('hot');
   const posts = useAllPosts({ sort });
+
+  const allPosts = posts.data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <>
@@ -26,11 +29,14 @@ export function TrendingPage() {
 
       {posts.isLoading && <LoadingSpinner />}
 
-      {posts.data?.data && posts.data.data.length > 0 ? (
+      {allPosts.length > 0 ? (
         <div className="space-y-3">
-          {posts.data.data.map((post: Post) => (
+          {allPosts.map((post: Post) => (
             <PostCard key={post._id} post={post} />
           ))}
+          {posts.hasNextPage && (
+            <LoadMoreButton onClick={() => posts.fetchNextPage()} isLoading={posts.isFetchingNextPage} />
+          )}
         </div>
       ) : (
         !posts.isLoading && (

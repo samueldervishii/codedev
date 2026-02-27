@@ -5,6 +5,7 @@ import { useAllPosts } from '../hooks/usePosts';
 import { useCommunities } from '../hooks/useCommunities';
 import { PostCard } from '../components/post/PostCard';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import type { Post, Community } from '@devhub/shared';
 import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
@@ -28,7 +29,7 @@ export function SearchPage() {
   }
 
   const communityResults = communities.data?.data ?? [];
-  const postResults = posts.data?.data ?? [];
+  const allPosts = posts.data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <>
@@ -70,11 +71,14 @@ export function SearchPage() {
       {/* Posts */}
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">Posts</h2>
       {posts.isLoading && <LoadingSpinner />}
-      {postResults.length > 0 ? (
+      {allPosts.length > 0 ? (
         <div className="space-y-3">
-          {postResults.map((post: Post) => (
+          {allPosts.map((post: Post) => (
             <PostCard key={post._id} post={post} />
           ))}
+          {posts.hasNextPage && (
+            <LoadMoreButton onClick={() => posts.fetchNextPage()} isLoading={posts.isFetchingNextPage} />
+          )}
         </div>
       ) : (
         !posts.isLoading && (

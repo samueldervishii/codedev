@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { PostCard } from '../components/post/PostCard';
 import { PostSortBar } from '../components/post/PostSortBar';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { useHomeFeed } from '../hooks/usePosts';
 import { useAuthStore } from '../stores/authStore';
 
@@ -12,6 +13,8 @@ export function HomePage() {
   const [sort, setSort] = useState('hot');
   const { isAuthenticated } = useAuthStore();
   const feed = useHomeFeed({ sort });
+
+  const posts = feed.data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <>
@@ -24,11 +27,14 @@ export function HomePage() {
       {isAuthenticated ? (
         <>
           {feed.isLoading && <LoadingSpinner />}
-          {feed.data?.data && feed.data.data.length > 0 ? (
+          {posts.length > 0 ? (
             <div className="space-y-3">
-              {feed.data.data.map((post: any) => (
+              {posts.map((post: any) => (
                 <PostCard key={post._id} post={post} />
               ))}
+              {feed.hasNextPage && (
+                <LoadMoreButton onClick={() => feed.fetchNextPage()} isLoading={feed.isFetchingNextPage} />
+              )}
             </div>
           ) : (
             !feed.isLoading && <EmptyFeed />

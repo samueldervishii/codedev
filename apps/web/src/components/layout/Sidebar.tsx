@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import {
   Home, Compass, TrendingUp, Plus, Newspaper, Menu, Users,
   HelpCircle, Info, Shield, FileText, Accessibility, Flame,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useUiStore } from '../../stores/uiStore';
@@ -17,6 +19,7 @@ export function Sidebar() {
   const { pathname } = useLocation();
   const { isAuthenticated, user } = useAuthStore();
   const { sidebarOpen: open, toggleSidebar } = useUiStore();
+  const [communitiesOpen, setCommunitiesOpen] = useState(false);
 
   const linkClass = (active?: boolean) =>
     cn(
@@ -27,10 +30,12 @@ export function Sidebar() {
         : 'text-gray-400 hover:bg-gray-900 hover:text-gray-200',
     );
 
+  const communities = user?.joinedCommunities ?? [];
+
   return (
     <aside
       className={cn(
-        'hidden shrink-0 border-r border-gray-800 transition-[width] duration-300 ease-in-out lg:block',
+        'sticky top-[49px] hidden shrink-0 border-r border-gray-800 transition-[width] duration-300 ease-in-out lg:block',
         open ? 'w-[270px]' : 'w-[52px]',
       )}
       style={{ height: 'calc(100vh - 49px)' }}
@@ -63,23 +68,31 @@ export function Sidebar() {
 
         <hr className="my-2 border-gray-800" />
 
-        {/* Communities */}
+        {/* Communities — collapsible dropdown */}
         <div>
-          {open && (
-            <div className="px-3 py-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Communities</span>
-            </div>
-          )}
+          {open ? (
+            <button
+              onClick={() => setCommunitiesOpen(!communitiesOpen)}
+              className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400"
+            >
+              Communities
+              <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', communitiesOpen && 'rotate-180')} />
+            </button>
+          ) : null}
 
+          {/* Create — always visible */}
           <div className="space-y-0.5">
             <Link to="/create-community" title="Create a community" className={linkClass()}>
               <Plus className="h-5 w-5 shrink-0" />
               {open && 'Create a community'}
             </Link>
+          </div>
 
-            {isAuthenticated && user?.joinedCommunities && user.joinedCommunities.length > 0 && (
-              <>
-                {user.joinedCommunities.map((community) => (
+          {/* Community list — only when dropdown is open */}
+          {open && communitiesOpen && (
+            <div className="mt-0.5 space-y-0.5">
+              {isAuthenticated && communities.length > 0 ? (
+                communities.map((community) => (
                   <Link
                     key={community._id}
                     to={`/c/${community.name}`}
@@ -91,19 +104,32 @@ export function Sidebar() {
                     ) : (
                       <Users className="h-5 w-5 shrink-0" />
                     )}
-                    {open && <span className="truncate">c/{community.name}</span>}
+                    <span className="truncate">c/{community.name}</span>
                   </Link>
-                ))}
-              </>
-            )}
+                ))
+              ) : isAuthenticated ? (
+                <p className="px-3 py-2 text-xs text-gray-600">Join communities to see them here</p>
+              ) : (
+                <p className="px-3 py-2 text-xs text-gray-600">Log in to see your communities</p>
+              )}
+            </div>
+          )}
 
-            {open && isAuthenticated && (!user?.joinedCommunities || user.joinedCommunities.length === 0) && (
-              <p className="px-3 py-2 text-xs text-gray-600">Join communities to see them here</p>
-            )}
-            {open && !isAuthenticated && (
-              <p className="px-3 py-2 text-xs text-gray-600">Log in to see your communities</p>
-            )}
-          </div>
+          {/* Collapsed: show first few community icons */}
+          {!open && isAuthenticated && communities.length > 0 && (
+            <div className="mt-0.5 space-y-0.5">
+              {communities.slice(0, 5).map((community) => (
+                <Link
+                  key={community._id}
+                  to={`/c/${community.name}`}
+                  title={`c/${community.name}`}
+                  className={linkClass(pathname === `/c/${community.name}`)}
+                >
+                  <Users className="h-5 w-5 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <hr className="my-2 border-gray-800" />

@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { useRestoreSession } from '../../hooks/useAuth';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { ScrollToTop } from '../shared/ScrollToTop';
 
 export function Layout() {
   const restore = useRestoreSession();
@@ -34,6 +35,7 @@ export function Layout() {
           </div>
         </main>
       </div>
+      <ScrollToTop />
     </div>
   );
 }

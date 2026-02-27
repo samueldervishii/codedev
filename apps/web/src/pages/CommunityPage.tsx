@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/authStore';
 import { PostCard } from '../components/post/PostCard';
 import { PostSortBar } from '../components/post/PostSortBar';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { TimeAgo } from '../components/shared/TimeAgo';
 import { formatNumber } from '../lib/utils';
 import type { Post } from '@devhub/shared';
@@ -130,20 +131,26 @@ export function CommunityPage() {
 
       {posts.isLoading && <LoadingSpinner />}
 
-      {posts.data?.data && posts.data.data.length > 0 ? (
-        <div className="space-y-3">
-          {posts.data.data.map((post: Post) => (
-            <PostCard key={post._id} post={post} />
-          ))}
-        </div>
-      ) : (
-        !posts.isLoading && (
-          <div className="flex flex-col items-center rounded-xl border border-gray-800 bg-gray-900 py-16 text-center">
-            <h2 className="mb-2 text-lg font-bold text-white">No posts yet</h2>
-            <p className="text-sm text-gray-400">Be the first to post in this community!</p>
+      {(() => {
+        const allPosts = posts.data?.pages.flatMap((p) => p.data) ?? [];
+        return allPosts.length > 0 ? (
+          <div className="space-y-3">
+            {allPosts.map((post: Post) => (
+              <PostCard key={post._id} post={post} />
+            ))}
+            {posts.hasNextPage && (
+              <LoadMoreButton onClick={() => posts.fetchNextPage()} isLoading={posts.isFetchingNextPage} />
+            )}
           </div>
-        )
-      )}
+        ) : (
+          !posts.isLoading && (
+            <div className="flex flex-col items-center rounded-xl border border-gray-800 bg-gray-900 py-16 text-center">
+              <h2 className="mb-2 text-lg font-bold text-white">No posts yet</h2>
+              <p className="text-sm text-gray-400">Be the first to post in this community!</p>
+            </div>
+          )
+        );
+      })()}
     </>
   );
 }

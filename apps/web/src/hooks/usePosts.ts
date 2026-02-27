@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { postsApi } from '../api/posts.api';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
@@ -6,12 +6,15 @@ import type { CreatePostInput } from '@devhub/shared';
 
 export function useCommunityPosts(
   communityName: string,
-  params?: { sort?: string; time?: string; page?: number },
+  params?: { sort?: string; time?: string },
 ) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['posts', 'community', communityName, params],
-    queryFn: () => postsApi.listByCommunity(communityName, params),
-    select: (res) => res.data,
+    queryFn: ({ pageParam = 1 }) =>
+      postsApi.listByCommunity(communityName, { ...params, page: pageParam }).then((r) => r.data),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination?.hasNext ? lastPage.pagination.page + 1 : undefined,
     enabled: !!communityName,
   });
 }
@@ -25,20 +28,26 @@ export function usePost(id: string) {
   });
 }
 
-export function useAllPosts(params?: { sort?: string; time?: string; search?: string; page?: number }) {
-  return useQuery({
+export function useAllPosts(params?: { sort?: string; time?: string; search?: string }) {
+  return useInfiniteQuery({
     queryKey: ['posts', 'all', params],
-    queryFn: () => postsApi.listAll(params),
-    select: (res) => res.data,
+    queryFn: ({ pageParam = 1 }) =>
+      postsApi.listAll({ ...params, page: pageParam }).then((r) => r.data),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination?.hasNext ? lastPage.pagination.page + 1 : undefined,
   });
 }
 
-export function useHomeFeed(params?: { sort?: string; page?: number }) {
+export function useHomeFeed(params?: { sort?: string }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['feed', 'home', params],
-    queryFn: () => postsApi.getHomeFeed(params),
-    select: (res) => res.data,
+    queryFn: ({ pageParam = 1 }) =>
+      postsApi.getHomeFeed({ ...params, page: pageParam }).then((r) => r.data),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination?.hasNext ? lastPage.pagination.page + 1 : undefined,
     enabled: isAuthenticated,
   });
 }
