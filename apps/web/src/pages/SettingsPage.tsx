@@ -1,13 +1,14 @@
 import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
-import { User, Lock, Shield } from 'lucide-react';
+import { User, Lock, Shield, Palette, Sun, Moon } from 'lucide-react';
 import { usersApi } from '../api/users.api';
 import { useAuthStore } from '../stores/authStore';
-import { cn } from '../lib/utils';
+import { useUiStore, type Theme } from '../stores/uiStore';
+import { cn, formatNumber } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { LIMITS } from '@devhub/shared';
 
-type Tab = 'account' | 'profile' | 'password';
+type Tab = 'account' | 'profile' | 'password' | 'appearance';
 
 export function SettingsPage() {
   const [tab, setTab] = useState<Tab>('account');
@@ -16,6 +17,7 @@ export function SettingsPage() {
     { value: 'account' as Tab, label: 'Account', icon: User },
     { value: 'profile' as Tab, label: 'Profile', icon: Shield },
     { value: 'password' as Tab, label: 'Password', icon: Lock },
+    { value: 'appearance' as Tab, label: 'Appearance', icon: Palette },
   ];
 
   return (
@@ -50,6 +52,7 @@ export function SettingsPage() {
         {tab === 'account' && <AccountTab />}
         {tab === 'profile' && <ProfileTab />}
         {tab === 'password' && <PasswordTab />}
+        {tab === 'appearance' && <AppearanceTab />}
       </div>
     </>
   );
@@ -81,7 +84,7 @@ function AccountTab() {
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-400">Karma</label>
           <div className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-gray-300">
-            {user?.karma ?? 0} total &middot; {user?.postKarma ?? 0} post &middot; {user?.commentKarma ?? 0} comment
+            {formatNumber(user?.karma ?? 0)} total &middot; {formatNumber(user?.postKarma ?? 0)} post &middot; {formatNumber(user?.commentKarma ?? 0)} comment
           </div>
         </div>
 
@@ -175,6 +178,45 @@ function ProfileTab() {
         </button>
       </div>
     </form>
+  );
+}
+
+function AppearanceTab() {
+  const { theme, setTheme } = useUiStore();
+
+  const options: { value: Theme; label: string; icon: typeof Sun; description: string }[] = [
+    { value: 'dark', label: 'Dark', icon: Moon, description: 'Dark background with light text' },
+    { value: 'light', label: 'Light', icon: Sun, description: 'Light background with dark text' },
+  ];
+
+  return (
+    <div className="space-y-6 rounded-xl border border-gray-800 bg-gray-900 p-6">
+      <h2 className="text-lg font-semibold text-white">Appearance</h2>
+
+      <div>
+        <label className="mb-3 block text-sm font-medium text-gray-400">Theme</label>
+        <div className="grid grid-cols-2 gap-3">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              className={cn(
+                'flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-5 transition-colors',
+                theme === opt.value
+                  ? 'border-brand-500 bg-brand-900/20'
+                  : 'border-gray-700 hover:border-gray-600',
+              )}
+            >
+              <opt.icon className={cn('h-8 w-8', theme === opt.value ? 'text-brand-400' : 'text-gray-400')} />
+              <span className={cn('text-sm font-medium', theme === opt.value ? 'text-white' : 'text-gray-300')}>
+                {opt.label}
+              </span>
+              <span className="text-xs text-gray-500">{opt.description}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

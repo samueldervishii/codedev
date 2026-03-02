@@ -14,19 +14,19 @@ const sorts = [
 
 export function PostSortBar({ sort, onSortChange }: PostSortBarProps) {
   return (
-    <div className="mb-4 flex items-center gap-1 rounded-lg border border-gray-800 bg-gray-900 p-2">
+    <div className="mb-3 flex items-center gap-2">
       {sorts.map((s) => (
         <button
           key={s.value}
           onClick={() => onSortChange(s.value)}
           className={cn(
-            'flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+            'flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
             sort === s.value
-              ? 'bg-gray-700 text-white'
-              : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+              ? 'bg-gray-800 text-white'
+              : 'text-gray-500 hover:bg-gray-800/50 hover:text-gray-300',
           )}
         >
-          <s.icon className="h-4 w-4" />
+          <s.icon className={cn('h-4 w-4', sort === s.value && 'text-brand-400')} />
           {s.label}
         </button>
       ))}

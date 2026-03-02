@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FileText, ExternalLink, Code2 } from 'lucide-react';
 import { useCreatePost } from '../hooks/usePosts';
+import { MarkdownEditor } from '../components/shared/MarkdownEditor';
 import { cn } from '../lib/utils';
 import type { CreatePostInput } from '@devhub/shared';
 
@@ -129,18 +130,13 @@ export function CreatePostPage() {
 
             {/* Text tab */}
             {tab === 'text' && (
-              <div>
-                <textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows={6}
-                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-brand-500"
-                  placeholder="What's on your mind?"
-                />
-                {errors.body && (
-                  <p className="mt-1 text-xs text-red-400">{errors.body}</p>
-                )}
-              </div>
+              <MarkdownEditor
+                value={body}
+                onChange={setBody}
+                placeholder="What's on your mind? (Markdown supported)"
+                rows={8}
+                error={errors.body}
+              />
             )}
 
             {/* Link tab */}

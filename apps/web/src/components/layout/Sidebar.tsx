@@ -3,7 +3,7 @@ import { useState } from 'react';
 import {
   Home, Compass, TrendingUp, Plus, Newspaper, Menu, Users,
   HelpCircle, Info, Shield, FileText, Accessibility, Flame,
-  ChevronDown,
+  ChevronDown, Bookmark,
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useUiStore } from '../../stores/uiStore';
@@ -35,7 +35,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'sticky top-[49px] hidden shrink-0 border-r border-gray-800 transition-[width] duration-300 ease-in-out lg:block',
+        'fixed top-[49px] left-0 z-40 hidden shrink-0 border-r border-gray-800 bg-gray-950 transition-[width] duration-300 ease-in-out lg:block',
         open ? 'w-[270px]' : 'w-[52px]',
       )}
       style={{ height: 'calc(100vh - 49px)' }}
@@ -64,6 +64,12 @@ export function Sidebar() {
               {open && item.label}
             </Link>
           ))}
+          {isAuthenticated && (
+            <Link to="/bookmarks" title="Saved" className={linkClass(pathname === '/bookmarks')}>
+              <Bookmark className="h-5 w-5 shrink-0" />
+              {open && 'Saved'}
+            </Link>
+          )}
         </nav>
 
         <hr className="my-2 border-gray-800" />
@@ -115,21 +121,6 @@ export function Sidebar() {
             </div>
           )}
 
-          {/* Collapsed: show first few community icons */}
-          {!open && isAuthenticated && communities.length > 0 && (
-            <div className="mt-0.5 space-y-0.5">
-              {communities.slice(0, 5).map((community) => (
-                <Link
-                  key={community._id}
-                  to={`/c/${community.name}`}
-                  title={`c/${community.name}`}
-                  className={linkClass(pathname === `/c/${community.name}`)}
-                >
-                  <Users className="h-5 w-5 shrink-0" />
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
 
         <hr className="my-2 border-gray-800" />

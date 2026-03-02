@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Vote } from './vote.model.js';
 import { Post } from '../posts/post.model.js';
 import { Comment } from '../comments/comment.model.js';
@@ -35,10 +36,13 @@ export class VoteService {
   }
 
   async batchGetVotes(input: BatchVoteInput, userId: string) {
+    const validIds = input.targetIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validIds.length === 0) return { votes: {} };
+
     const votes = await Vote.find({
       user: userId,
       targetType: input.targetType,
-      target: { $in: input.targetIds },
+      target: { $in: validIds },
     });
 
     const voteMap: Record<string, 1 | -1> = {};
@@ -81,6 +85,11 @@ export class VoteService {
     value: 1 | -1,
     userId: string,
   ) {
+    // Prevent self-voting
+    if (authorId === userId) {
+      throw ApiError.badRequest('Cannot vote on your own content');
+    }
+
     const existingVote = await Vote.findOne({
       user: userId,
       targetType,
@@ -90,8 +99,15 @@ export class VoteService {
     const karmaField = targetType === 'post' ? 'postKarma' : 'commentKarma';
 
     if (!existingVote) {
-      // New vote
-      await Vote.create({ user: userId, targetType, target: targetId, value });
+      // New vote — use try/catch to handle unique index race condition
+      try {
+        await Vote.create({ user: userId, targetType, target: targetId, value });
+      } catch (err: any) {
+        if (err.code === 11000) {
+          throw ApiError.conflict('Vote already exists');
+        }
+        throw err;
+      }
 
       await this.updateTargetScore(targetType, targetId, {
         upvoteCount: value === 1 ? 1 : 0,
@@ -116,9 +132,13 @@ export class VoteService {
         $inc: { [karmaField]: -value, karma: -value },
       });
     } else {
-      // Opposite vote — flip
-      existingVote.value = value;
-      await existingVote.save();
+      // Opposite vote — flip (atomic to avoid race)
+      const flipped = await Vote.findOneAndUpdate(
+        { _id: existingVote._id, value: existingVote.value },
+        { $set: { value } },
+        { new: true },
+      );
+      if (!flipped) throw ApiError.conflict('Vote was modified concurrently');
 
       await this.updateTargetScore(targetType, targetId, {
         upvoteCount: value === 1 ? 1 : -1,

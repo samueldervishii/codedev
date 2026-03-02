@@ -58,6 +58,7 @@ export function useCreatePost(communityName: string) {
     mutationFn: (data: CreatePostInput) => postsApi.create(communityName, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts', 'community', communityName] });
+      queryClient.invalidateQueries({ queryKey: ['communities', communityName] });
       toast.success('Post created!');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to create post'),
@@ -70,6 +71,8 @@ export function useDeletePost() {
     mutationFn: (id: string) => postsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['communities'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
       toast.success('Post deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete post'),

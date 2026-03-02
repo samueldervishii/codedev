@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
@@ -6,6 +6,7 @@ import { useRestoreSession } from '../../hooks/useAuth';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { ScrollToTop } from '../shared/ScrollToTop';
+import { NavigationProgress } from '../shared/NavigationProgress';
 
 export function Layout() {
   const restore = useRestoreSession();
@@ -15,6 +16,12 @@ export function Layout() {
     restore.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   if (isRestoring) {
     return (
@@ -26,15 +33,14 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-950">
+      <NavigationProgress />
       <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="min-w-0 flex-1 overflow-y-auto px-6 py-4">
-          <div className="mx-auto max-w-3xl">
-            <Outlet />
-          </div>
-        </main>
-      </div>
+      <Sidebar />
+      <main className="px-6 py-4">
+        <div className="mx-auto max-w-3xl">
+          <Outlet />
+        </div>
+      </main>
       <ScrollToTop />
     </div>
   );

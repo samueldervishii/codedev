@@ -2,22 +2,27 @@ import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Trophy, MessageSquare, FileText } from 'lucide-react';
+import { Calendar, Trophy, MessageSquare, FileText, Bookmark } from 'lucide-react';
 import { usersApi } from '../api/users.api';
 import { postsApi } from '../api/posts.api';
 import { commentsApi } from '../api/comments.api';
 import { PostCard } from '../components/post/PostCard';
+import { useBatchBookmarks, useUserBookmarks } from '../hooks/useBookmarks';
+import { useAuthStore } from '../stores/authStore';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { TimeAgo } from '../components/shared/TimeAgo';
 import { formatNumber } from '../lib/utils';
 import { cn } from '../lib/utils';
 import type { Post, Comment as CommentType } from '@devhub/shared';
 
-type ProfileTab = 'posts' | 'comments';
+type ProfileTab = 'posts' | 'comments' | 'saved';
 
 export function UserProfilePage() {
   const { username } = useParams<{ username: string }>();
   const [tab, setTab] = useState<ProfileTab>('posts');
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwnProfile = currentUser?.username === username;
 
   const profile = useQuery({
     queryKey: ['users', username],
@@ -40,6 +45,13 @@ export function UserProfilePage() {
     enabled: !!username && tab === 'comments',
   });
 
+  const bookmarks = useUserBookmarks();
+  const savedPosts = tab === 'saved' ? (bookmarks.data?.pages.flatMap((p: any) => p.data) ?? []) : [];
+
+  const userPostIds = (posts.data || []).map((p: Post) => p._id);
+  const batchBookmarks = useBatchBookmarks(userPostIds);
+  const bookmarkMap = batchBookmarks.data?.bookmarks ?? {};
+
   if (profile.isLoading) return <LoadingSpinner />;
 
   if (!profile.data) {
@@ -52,6 +64,7 @@ export function UserProfilePage() {
   }
 
   const u = profile.data;
+  const tabs: ProfileTab[] = isOwnProfile ? ['posts', 'comments', 'saved'] : ['posts', 'comments'];
 
   return (
     <>
@@ -100,12 +113,12 @@ export function UserProfilePage() {
 
       {/* Tabs */}
       <div className="mb-4 flex gap-1 border-b border-gray-800">
-        {(['posts', 'comments'] as ProfileTab[]).map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'border-b-2 px-4 py-2.5 text-sm font-medium capitalize transition-colors',
+              'cursor-pointer border-b-2 px-4 py-2.5 text-sm font-medium capitalize transition-colors',
               tab === t
                 ? 'border-brand-500 text-brand-400'
                 : 'border-transparent text-gray-400 hover:text-gray-300',
@@ -123,7 +136,7 @@ export function UserProfilePage() {
           {posts.data && posts.data.length > 0 ? (
             <div className="space-y-3">
               {posts.data.map((post: Post) => (
-                <PostCard key={post._id} post={post} />
+                <PostCard key={post._id} post={post} isBookmarked={bookmarkMap[post._id]} />
               ))}
             </div>
           ) : (
@@ -154,6 +167,33 @@ export function UserProfilePage() {
           )}
         </>
       )}
+
+      {tab === 'saved' && isOwnProfile && (
+        <>
+          {bookmarks.isLoading && <LoadingSpinner />}
+          {savedPosts.length > 0 ? (
+            <div className="space-y-3">
+              {savedPosts.map((post: any) => (
+                <PostCard key={post._id} post={post} isBookmarked />
+              ))}
+              {bookmarks.hasNextPage && (
+                <LoadMoreButton
+                  onClick={() => bookmarks.fetchNextPage()}
+                  isLoading={bookmarks.isFetchingNextPage}
+                />
+              )}
+            </div>
+          ) : (
+            !bookmarks.isLoading && (
+              <div className="flex flex-col items-center rounded-xl border border-gray-800 bg-gray-900 py-12 text-center">
+                <Bookmark className="mb-3 h-8 w-8 text-gray-600" />
+                <p className="mb-1 text-sm font-medium text-white">No saved posts yet</p>
+                <p className="text-xs text-gray-500">Posts you save will appear here.</p>
+              </div>
+            )
+          )}
+        </>
+      )}
     </>
   );
 }
@@ -164,7 +204,7 @@ function UserCommentCard({ comment }: { comment: CommentType }) {
       <div className="mb-2 flex items-center gap-1.5 text-xs text-gray-400">
         <Link
           to={`/u/${comment.authorUsername}`}
-          className="font-semibold text-gray-200 hover:underline"
+          className="cursor-pointer font-semibold text-gray-200 hover:underline"
         >
           u/{comment.authorUsername}
         </Link>

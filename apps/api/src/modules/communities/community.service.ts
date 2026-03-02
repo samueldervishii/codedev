@@ -88,17 +88,14 @@ export class CommunityService {
     const community = await Community.findOne({ name });
     if (!community) throw ApiError.notFound('Community not found');
 
-    const user = await User.findById(userId);
-    if (!user) throw ApiError.notFound('User not found');
-
-    const alreadyJoined = user.joinedCommunities.some(
-      (c) => c.toString() === community._id.toString(),
+    // Atomic: only adds if not already a member
+    const updated = await User.findOneAndUpdate(
+      { _id: userId, joinedCommunities: { $ne: community._id } },
+      { $addToSet: { joinedCommunities: community._id } },
+      { new: true },
     );
-    if (alreadyJoined) throw ApiError.badRequest('Already a member');
+    if (!updated) throw ApiError.badRequest('Already a member');
 
-    await User.findByIdAndUpdate(userId, {
-      $addToSet: { joinedCommunities: community._id },
-    });
     await Community.findByIdAndUpdate(community._id, { $inc: { memberCount: 1 } });
 
     return { joined: true };
@@ -112,12 +109,14 @@ export class CommunityService {
       throw ApiError.badRequest('Creator cannot leave their own community');
     }
 
-    await User.findByIdAndUpdate(userId, {
-      $pull: { joinedCommunities: community._id },
-    });
-    await Community.findByIdAndUpdate(community._id, {
-      $inc: { memberCount: -1 },
-    });
+    // Atomic: only removes if currently a member
+    const before = await User.findOneAndUpdate(
+      { _id: userId, joinedCommunities: community._id },
+      { $pull: { joinedCommunities: community._id } },
+    );
+    if (!before) throw ApiError.badRequest('Not a member');
+
+    await Community.findByIdAndUpdate(community._id, { $inc: { memberCount: -1 } });
 
     return { joined: false };
   }

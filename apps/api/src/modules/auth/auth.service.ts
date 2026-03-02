@@ -6,15 +6,13 @@ import type { RegisterInput, LoginInput } from '@devhub/shared';
 
 export class AuthService {
   async register(input: RegisterInput) {
-    const existingUser = await User.findOne({
-      $or: [{ email: input.email }, { username: input.username }],
-    });
+    const [emailTaken, usernameTaken] = await Promise.all([
+      User.exists({ email: input.email }),
+      User.exists({ username: input.username }),
+    ]);
 
-    if (existingUser) {
-      if (existingUser.email === input.email) {
-        throw ApiError.conflict('Email already registered');
-      }
-      throw ApiError.conflict('Username already taken');
+    if (emailTaken || usernameTaken) {
+      throw ApiError.conflict('Email or username already taken');
     }
 
     const user = await User.create({
@@ -93,14 +91,21 @@ export class AuthService {
     const newAccessToken = signAccessToken(tokenPayload);
     const newRefreshToken = signRefreshToken(tokenPayload);
 
-    user.refreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
-    await user.save();
+    const newHash = await bcrypt.hash(newRefreshToken, 10);
 
-    // Populate for frontend sidebar
-    await user.populate('joinedCommunities', 'name displayName iconUrl');
+    // Atomic: only update if the hash hasn't changed (prevents concurrent refresh race)
+    const updated = await User.findOneAndUpdate(
+      { _id: user._id, refreshTokenHash: user.refreshTokenHash },
+      { $set: { refreshTokenHash: newHash } },
+      { new: true },
+    ).populate('joinedCommunities', 'name displayName iconUrl');
+
+    if (!updated) {
+      throw ApiError.unauthorized('Token already used');
+    }
 
     return {
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(updated),
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
     };

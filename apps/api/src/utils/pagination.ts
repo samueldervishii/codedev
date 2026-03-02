@@ -8,7 +8,7 @@ export interface PaginationOptions {
 }
 
 export function getPagination(req: Request): PaginationOptions {
-  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const page = Math.min(1000, Math.max(1, parseInt(req.query.page as string) || 1));
   const limit = Math.min(
     LIMITS.PAGE_SIZE_MAX,
     Math.max(1, parseInt(req.query.limit as string) || LIMITS.PAGE_SIZE_DEFAULT),

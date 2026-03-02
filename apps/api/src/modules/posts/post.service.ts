@@ -1,6 +1,9 @@
 import { Post } from './post.model.js';
 import { Community } from '../communities/community.model.js';
 import { User } from '../users/user.model.js';
+import { Comment } from '../comments/comment.model.js';
+import { Vote } from '../votes/vote.model.js';
+import { Bookmark } from '../bookmarks/bookmark.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
 import { calculateHotScore } from '../../utils/ranking.js';
@@ -105,10 +108,21 @@ export class PostService {
       if (!isMod) throw ApiError.forbidden('Not authorized to delete this post');
     }
 
-    post.isDeleted = true;
-    await post.save();
+    // Soft-delete atomically — only decrement count if we actually mark it deleted
+    const updated = await Post.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { $set: { isDeleted: true } },
+    );
+    if (!updated) return; // Already deleted
 
     await Community.findByIdAndUpdate(post.community, { $inc: { postCount: -1 } });
+
+    // Cascade: soft-delete comments, remove votes and bookmarks
+    await Promise.all([
+      Comment.updateMany({ post: id, isDeleted: false }, { $set: { isDeleted: true, body: '[deleted]' } }),
+      Vote.deleteMany({ target: id, targetType: 'post' }),
+      Bookmark.deleteMany({ post: id }),
+    ]);
   }
 
   async getHomeFeed(userId: string, req: Request) {

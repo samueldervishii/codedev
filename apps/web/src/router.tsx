@@ -14,6 +14,13 @@ import { PostPage } from './pages/PostPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { AboutPage } from './pages/AboutPage';
+import { HelpPage } from './pages/HelpPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { AccessibilityPage } from './pages/AccessibilityPage';
+import { BookmarksPage } from './pages/BookmarksPage';
+import { AskPage } from './pages/AskPage';
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +48,23 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
       },
+      {
+        path: 'bookmarks',
+        element: <ProtectedRoute><BookmarksPage /></ProtectedRoute>,
+      },
+      {
+        path: 'ask',
+        element: <ProtectedRoute><AskPage /></ProtectedRoute>,
+      },
+      {
+        path: 'ask/:conversationId',
+        element: <ProtectedRoute><AskPage /></ProtectedRoute>,
+      },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'help', element: <HelpPage /> },
+      { path: 'privacy', element: <PrivacyPage /> },
+      { path: 'terms', element: <TermsPage /> },
+      { path: 'accessibility', element: <AccessibilityPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

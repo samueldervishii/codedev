@@ -6,13 +6,15 @@ import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
-import { authLimiter, generalLimiter } from './middleware/rateLimiter.js';
+import { authLimiter, chatLimiter, generalLimiter } from './middleware/rateLimiter.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { userRoutes } from './modules/users/user.routes.js';
 import { communityRoutes } from './modules/communities/community.routes.js';
 import { postRoutes } from './modules/posts/post.routes.js';
 import { commentRoutes } from './modules/comments/comment.routes.js';
 import { voteRoutes } from './modules/votes/vote.routes.js';
+import { chatRoutes } from './modules/chat/chat.routes.js';
+import { bookmarkRoutes } from './modules/bookmarks/bookmark.routes.js';
 
 const app = express();
 
@@ -48,6 +50,8 @@ app.use('/api/v1/communities', communityRoutes);
 app.use('/api/v1', postRoutes); // Mounted at root because routes have mixed prefixes
 app.use('/api/v1', commentRoutes);
 app.use('/api/v1', voteRoutes);
+app.use('/api/v1', chatLimiter, chatRoutes);
+app.use('/api/v1', bookmarkRoutes);
 
 // Error handling
 app.use(notFound);

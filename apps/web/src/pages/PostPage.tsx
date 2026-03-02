@@ -1,17 +1,22 @@
 import { Helmet } from 'react-helmet-async';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Share2, Code2, ExternalLink, FileText, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MessageSquare, Share2, Code2, ExternalLink, FileText, Trash2, Bookmark } from 'lucide-react';
 import { usePost, useDeletePost } from '../hooks/usePosts';
+import toast from 'react-hot-toast';
 import { useComments, useCreateComment } from '../hooks/useComments';
 import { useVotePost, useVoteComment } from '../hooks/useVotes';
 import { useAuthStore } from '../stores/authStore';
+import { useBatchBookmarks, useToggleBookmark } from '../hooks/useBookmarks';
 import { VoteButtons } from '../components/vote/VoteButtons';
 import { TimeAgo } from '../components/shared/TimeAgo';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
+import { ConfirmDialog } from '../components/shared/ConfirmDialog';
 import { formatNumber } from '../lib/utils';
 import { CommentThread } from '../components/comment/CommentThread';
 import { CommentForm } from '../components/comment/CommentForm';
 import { CodeBlock } from '../components/post/CodeBlock';
+import { MarkdownPreview } from '../components/shared/MarkdownPreview';
 import type { Post, Comment as CommentType } from '@devhub/shared';
 
 export function PostPage() {
@@ -21,7 +26,13 @@ export function PostPage() {
   const votePost = useVotePost();
   const createComment = useCreateComment(postId!);
   const deletePost = useDeletePost();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
+  const toggleBookmark = useToggleBookmark();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const postId_ = post.data?._id;
+  const batchBookmarks = useBatchBookmarks(postId_ ? [postId_] : []);
+  const isBookmarked = postId_ ? (batchBookmarks.data?.bookmarks?.[postId_] ?? false) : false;
 
   if (post.isLoading) return <LoadingSpinner />;
   if (!post.data) {
@@ -109,8 +120,8 @@ export function PostPage() {
 
             {/* Body */}
             {p.type === 'text' && p.body && (
-              <div className="mb-4 text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">
-                {p.body}
+              <div className="mb-4">
+                <MarkdownPreview content={p.body} />
               </div>
             )}
 
@@ -149,20 +160,48 @@ export function PostPage() {
                 <MessageSquare className="h-4 w-4" />
                 {formatNumber(p.commentCount)} Comments
               </span>
-              <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Link copied to clipboard');
+                }}
+                className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:bg-gray-800"
+              >
                 <Share2 className="h-4 w-4" />
                 Share
               </button>
-              {isAuthor && (
+              {isAuthenticated && (
                 <button
-                  onClick={() => {
-                    if (confirm('Delete this post?')) deletePost.mutate(p._id);
-                  }}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-gray-800"
+                  onClick={() => toggleBookmark.mutate({ postId: p._id, isBookmarked })}
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-800 ${isBookmarked ? 'text-brand-400' : 'text-gray-400'}`}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
+                  <Bookmark className="h-4 w-4" fill={isBookmarked ? 'currentColor' : 'none'} />
+                  {isBookmarked ? 'Saved' : 'Save'}
                 </button>
+              )}
+              {isAuthor && (
+                <>
+                  <button
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-gray-800"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                  <ConfirmDialog
+                    open={showDeleteDialog}
+                    title="Delete post?"
+                    description="This action cannot be undone. Your post and all its content will be permanently removed."
+                    confirmLabel="Delete"
+                    onCancel={() => setShowDeleteDialog(false)}
+                    onConfirm={() => {
+                      setShowDeleteDialog(false);
+                      deletePost.mutate(p._id, {
+                        onSuccess: () => navigate(`/c/${p.communityName}`),
+                      });
+                    }}
+                  />
+                </>
               )}
             </div>
           </div>

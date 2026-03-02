@@ -3,7 +3,7 @@ import { communitiesApi } from '../api/communities.api';
 import { authApi } from '../api/auth.api';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
-import type { CreateCommunityInput } from '@devhub/shared';
+import type { CreateCommunityInput, UpdateCommunityInput } from '@devhub/shared';
 
 export function useCommunities(params?: { search?: string; tag?: string; page?: number }) {
   return useQuery({
@@ -38,6 +38,19 @@ export function useCreateCommunity() {
       toast.success('Community created!');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to create community'),
+  });
+}
+
+export function useUpdateCommunity(name: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateCommunityInput) => communitiesApi.update(name, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communities', name] });
+      toast.success('Community updated!');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update community'),
   });
 }
 

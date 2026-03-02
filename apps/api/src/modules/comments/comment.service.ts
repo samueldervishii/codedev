@@ -40,9 +40,14 @@ export class CommentService {
     return comment;
   }
 
-  async listByPost(postId: string, sort: string = 'best') {
+  async listByPost(postId: string, sort: string = 'best', page: number = 1, limit: number = 100) {
     const post = await Post.findOne({ _id: postId, isDeleted: false });
     if (!post) throw ApiError.notFound('Post not found');
+
+    // Cap limit to prevent abuse
+    const safeLimit = Math.min(Math.max(1, limit), 200);
+    const safePage = Math.max(1, page);
+    const skip = (safePage - 1) * safeLimit;
 
     const sortMap: Record<string, any> = {
       best: { score: -1, createdAt: -1 },
@@ -50,11 +55,15 @@ export class CommentService {
       top: { score: -1 },
     };
 
-    const comments = await Comment.find({ post: postId }).sort(
-      sortMap[sort] || sortMap.best,
-    );
+    const [comments, total] = await Promise.all([
+      Comment.find({ post: postId })
+        .sort(sortMap[sort] || sortMap.best)
+        .skip(skip)
+        .limit(safeLimit),
+      Comment.countDocuments({ post: postId }),
+    ]);
 
-    return comments;
+    return { comments, total, page: safePage, limit: safeLimit };
   }
 
   async update(id: string, input: UpdateCommentInput, userId: string) {
@@ -68,17 +77,19 @@ export class CommentService {
   }
 
   async delete(id: string, userId: string) {
-    const comment = await Comment.findById(id);
-    if (!comment) throw ApiError.notFound('Comment not found');
+    // Atomic: only soft-delete if author matches and not already deleted
+    const comment = await Comment.findOneAndUpdate(
+      { _id: id, author: userId, isDeleted: false },
+      { $set: { isDeleted: true, body: '[deleted]' } },
+    );
 
-    const isAuthor = comment.author.toString() === userId;
-    if (!isAuthor) {
-      throw ApiError.forbidden('Not authorized to delete this comment');
+    if (!comment) {
+      // Distinguish between not found, not author, or already deleted
+      const existing = await Comment.findById(id);
+      if (!existing) throw ApiError.notFound('Comment not found');
+      if (existing.author.toString() !== userId) throw ApiError.forbidden('Not authorized to delete this comment');
+      return; // Already deleted
     }
-
-    comment.isDeleted = true;
-    comment.body = '[deleted]';
-    await comment.save();
 
     await Post.findByIdAndUpdate(comment.post, { $inc: { commentCount: -1 } });
   }

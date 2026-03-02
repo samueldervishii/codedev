@@ -1,8 +1,25 @@
 import rateLimit from 'express-rate-limit';
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per window for auth routes
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { success: false, message: 'Chat rate limit reached, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Stricter limiter for write operations (create post, comment, vote, bookmark, join/leave)
+export const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
   message: { success: false, message: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,

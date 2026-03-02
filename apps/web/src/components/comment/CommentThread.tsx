@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MessageSquare, Trash2 } from 'lucide-react';
 import { VoteButtons } from '../vote/VoteButtons';
 import { TimeAgo } from '../shared/TimeAgo';
+import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { CommentForm } from './CommentForm';
 import { useCreateComment, useDeleteComment } from '../../hooks/useComments';
 import { useVoteComment } from '../../hooks/useVotes';
@@ -25,6 +26,7 @@ const MAX_VISIBLE_DEPTH = 6;
 export function CommentThread({ comment, postId, depth = 0 }: CommentThreadProps) {
   const [showReply, setShowReply] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
   const createComment = useCreateComment(postId);
   const deleteComment = useDeleteComment(postId);
@@ -92,15 +94,26 @@ export function CommentThread({ comment, postId, depth = 0 }: CommentThreadProps
                 </button>
               )}
               {isAuthor && !comment.isDeleted && (
-                <button
-                  onClick={() => {
-                    if (confirm('Delete this comment?')) deleteComment.mutate(comment._id);
-                  }}
-                  className="flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-gray-800"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-gray-800"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                  <ConfirmDialog
+                    open={showDeleteDialog}
+                    title="Delete comment?"
+                    description="This action cannot be undone."
+                    confirmLabel="Delete"
+                    onCancel={() => setShowDeleteDialog(false)}
+                    onConfirm={() => {
+                      setShowDeleteDialog(false);
+                      deleteComment.mutate(comment._id);
+                    }}
+                  />
+                </>
               )}
             </div>
 

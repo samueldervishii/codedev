@@ -1,6 +1,10 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, monospace;
+
   /* Purple/Violet brand — distinct from Reddit's orange */
   --color-brand-50: #f5f3ff;
   --color-brand-100: #ede9fe;
@@ -25,20 +29,69 @@ body {
   @apply bg-gray-950 text-gray-100;
 }
 
+/* ─── Light mode overrides ─── */
+html.light {
+  /* Remap gray palette so all existing Tailwind classes work in light mode */
+  --color-gray-950: #ffffff;
+  --color-gray-900: #f9fafb;
+  --color-gray-800: #f3f4f6;
+  --color-gray-700: #d1d5db;
+  --color-gray-600: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-400: #374151;
+  --color-gray-300: #1f2937;
+  --color-gray-200: #111827;
+  --color-gray-100: #030712;
+
+  /* Remap white → dark for headings/bold text */
+  --color-white: #030712;
+
+  /* Brand adjustments for light mode contrast */
+  --color-brand-900: #ede9fe;
+}
+
+html.light body {
+  background-color: var(--color-gray-950);
+  color: var(--color-gray-100);
+}
+
+/* Keep actual white text on brand/colored backgrounds in light mode */
+html.light .bg-brand-600,
+html.light .bg-brand-500,
+html.light .bg-brand-700 {
+  --color-white: #fff;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
+.dark ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
   background: #111827;
 }
 
+.dark ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
   background: #374151;
   border-radius: 4px;
 }
 
+.dark ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }

@@ -7,6 +7,7 @@ import { PostSortBar } from '../components/post/PostSortBar';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { useHomeFeed } from '../hooks/usePosts';
+import { useBatchBookmarks } from '../hooks/useBookmarks';
 import { useAuthStore } from '../stores/authStore';
 
 export function HomePage() {
@@ -15,6 +16,9 @@ export function HomePage() {
   const feed = useHomeFeed({ sort });
 
   const posts = feed.data?.pages.flatMap((p) => p.data) ?? [];
+  const postIds = posts.map((p: any) => p._id);
+  const batchBookmarks = useBatchBookmarks(postIds);
+  const bookmarkMap = batchBookmarks.data?.bookmarks ?? {};
 
   return (
     <>
@@ -30,10 +34,13 @@ export function HomePage() {
           {posts.length > 0 ? (
             <div className="space-y-3">
               {posts.map((post: any) => (
-                <PostCard key={post._id} post={post} />
+                <PostCard key={post._id} post={post} isBookmarked={bookmarkMap[post._id]} />
               ))}
               {feed.hasNextPage && (
-                <LoadMoreButton onClick={() => feed.fetchNextPage()} isLoading={feed.isFetchingNextPage} />
+                <LoadMoreButton
+                  onClick={() => feed.fetchNextPage()}
+                  isLoading={feed.isFetchingNextPage}
+                />
               )}
             </div>
           ) : (
@@ -55,8 +62,8 @@ function WelcomePage() {
       </div>
       <h1 className="mb-3 text-3xl font-bold text-white">Welcome to DevHub</h1>
       <p className="mb-8 max-w-md text-gray-400">
-        The developer community. Share code, discuss ideas, and connect with
-        developers from around the world.
+        The developer community. Share code, discuss ideas, and connect with developers from around
+        the world.
       </p>
       <div className="flex gap-3">
         <Link

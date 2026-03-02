@@ -63,7 +63,7 @@ export function useLogout() {
   });
 }
 
-const MIN_LOADING_MS = 600;
+const MIN_LOADING_MS = 3000;
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function useRestoreSession() {

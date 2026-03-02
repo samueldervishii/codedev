@@ -10,8 +10,13 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 
 export const listByPost = asyncHandler(async (req: Request, res: Response) => {
   const sort = (req.query.sort as string) || 'best';
-  const comments = await commentService.listByPost(req.params.postId as string, sort);
-  res.json({ success: true, data: comments });
+  const { page, limit } = getPagination(req);
+  const result = await commentService.listByPost(req.params.postId as string, sort, page, limit);
+  res.json({
+    success: true,
+    data: result.comments,
+    pagination: buildPaginationResponse(result.total, result.page, result.limit),
+  });
 });
 
 export const update = asyncHandler(async (req: Request, res: Response) => {

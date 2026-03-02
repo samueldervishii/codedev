@@ -12,6 +12,14 @@ export * from './types/post.types.js';
 export * from './types/comment.types.js';
 export * from './types/vote.types.js';
 
+// Chat
+export * from './types/chat.types.js';
+export * from './schemas/chat.schema.js';
+
+// Bookmarks
+export * from './types/bookmark.types.js';
+export * from './schemas/bookmark.schema.js';
+
 // Schemas
 export * from './schemas/auth.schema.js';
 export * from './schemas/community.schema.js';
