@@ -6,6 +6,16 @@ export interface CodeSnippet {
   fileName?: string;
 }
 
+export interface PostFlair {
+  name: string;
+  color: string;
+}
+
+export interface CrosspostFrom {
+  postId: string;
+  communityName: string;
+}
+
 export interface Post {
   _id: string;
   title: string;
@@ -13,6 +23,10 @@ export interface Post {
   body?: string;
   url?: string;
   codeSnippet?: CodeSnippet;
+  flair?: PostFlair;
+  crosspostFrom?: CrosspostFrom;
+  isPinned: boolean;
+  isLocked: boolean;
   author: string;
   community: string;
   upvoteCount: number;

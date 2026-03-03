@@ -25,6 +25,15 @@ export const updateCommunitySchema = z.object({
     .max(LIMITS.COMMUNITY_RULES_MAX)
     .optional(),
   tags: z.array(z.string().max(30)).max(10).optional(),
+  flairs: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(30),
+        color: z.string().min(1).max(20),
+      }),
+    )
+    .max(20)
+    .optional(),
 });
 
 export type CreateCommunityInput = z.infer<typeof createCommunitySchema>;

@@ -3,6 +3,11 @@ import { commentService } from './comment.service.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
 
+export const search = asyncHandler(async (req: Request, res: Response) => {
+  const result = await commentService.search(req);
+  res.json({ success: true, ...result });
+});
+
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const comment = await commentService.create(req.params.postId as string, req.body, req.user!.userId);
   res.status(201).json({ success: true, data: comment });

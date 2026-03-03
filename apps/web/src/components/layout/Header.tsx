@@ -1,14 +1,15 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Code2, Plus, LogOut, User, X, Settings, Sun, Moon, Bot } from 'lucide-react';
+import { Code2, Plus, LogOut, User, X, Settings, Sun, Moon, Bot, Menu } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useLogout } from '../../hooks/useAuth';
 import { formatNumber } from '../../lib/utils';
 import { useState, useRef, useEffect } from 'react';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 
 export function Header() {
   const { user, isAuthenticated } = useAuthStore();
-  const { theme, toggleTheme } = useUiStore();
+  const { theme, toggleTheme, toggleMobileSidebar } = useUiStore();
   const logout = useLogout();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -43,7 +44,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-800 bg-gray-950">
       <div className="mx-auto grid h-12 grid-cols-[auto_1fr_auto] items-center gap-4 px-4">
-        {/* Logo — left */}
+        {/* Mobile hamburger + Logo — left */}
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={toggleMobileSidebar}
+            className="flex cursor-pointer items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-gray-200 lg:hidden"
+            title="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         <Link to="/" className="flex shrink-0 cursor-pointer items-center gap-2 text-lg font-bold">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600">
             <Code2 className="h-5 w-5 text-white" />
@@ -52,6 +61,7 @@ export function Header() {
             dev<span className="text-brand-400">hub</span>
           </span>
         </Link>
+        </div>
 
         {/* Search — true center */}
         <form onSubmit={handleSearch} className="mx-auto w-full max-w-[580px]">
@@ -100,6 +110,7 @@ export function Header() {
           </button>
           {isAuthenticated ? (
             <>
+              <NotificationDropdown />
               <Link
                 to="/explore"
                 className="flex cursor-pointer items-center gap-1.5 rounded-full border border-gray-700 px-3 py-1 text-sm text-gray-300 transition-colors hover:border-gray-500 hover:text-white"
@@ -114,18 +125,26 @@ export function Header() {
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex cursor-pointer items-center justify-center rounded-full p-1 transition-colors hover:bg-gray-800"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
-                    {user?.username?.[0]?.toUpperCase()}
-                  </div>
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.username} className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
+                      {user?.username?.[0]?.toUpperCase()}
+                    </div>
+                  )}
                 </button>
 
                 {showDropdown && (
                   <div className="absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl border border-gray-700 bg-gray-900 shadow-xl">
                     {/* Profile header */}
                     <div className="flex items-center gap-3 px-5 py-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white">
-                        {user?.username?.[0]?.toUpperCase()}
-                      </div>
+                      {user?.avatarUrl ? (
+                        <img src={user.avatarUrl} alt={user.username} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-white">
+                          {user?.username?.[0]?.toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-white">
                           {user?.username}

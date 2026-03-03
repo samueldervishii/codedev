@@ -11,6 +11,10 @@ export interface IPost extends Document {
     language: string;
     fileName?: string;
   };
+  flair?: { name: string; color: string };
+  crosspostFrom?: { postId: mongoose.Types.ObjectId; communityName: string };
+  isPinned: boolean;
+  isLocked: boolean;
   author: mongoose.Types.ObjectId;
   community: mongoose.Types.ObjectId;
   upvoteCount: number;
@@ -36,6 +40,16 @@ const postSchema = new Schema<IPost>(
       language: { type: String, maxlength: 50 },
       fileName: { type: String, maxlength: 200 },
     },
+    flair: {
+      name: { type: String, maxlength: 30 },
+      color: { type: String, maxlength: 20 },
+    },
+    crosspostFrom: {
+      postId: { type: Schema.Types.ObjectId, ref: 'Post' },
+      communityName: { type: String },
+    },
+    isPinned: { type: Boolean, default: false },
+    isLocked: { type: Boolean, default: false },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     community: { type: Schema.Types.ObjectId, ref: 'Community', required: true },
     upvoteCount: { type: Number, default: 0 },

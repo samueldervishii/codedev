@@ -3,6 +3,7 @@ import { Community } from '../communities/community.model.js';
 import { User } from '../users/user.model.js';
 import { Comment } from '../comments/comment.model.js';
 import { Vote } from '../votes/vote.model.js';
+import { badgeService } from '../badges/badge.service.js';
 import { Bookmark } from '../bookmarks/bookmark.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
@@ -36,6 +37,9 @@ export class PostService {
     });
 
     await Community.findByIdAndUpdate(community._id, { $inc: { postCount: 1 } });
+
+    // Check for new badges
+    badgeService.checkAndAward(userId).catch(() => {});
 
     return post;
   }
@@ -82,6 +86,77 @@ export class PostService {
   async getById(id: string) {
     const post = await Post.findOne({ _id: id, isDeleted: false });
     if (!post) throw ApiError.notFound('Post not found');
+    return post;
+  }
+
+  async crosspost(originalPostId: string, targetCommunityName: string, userId: string) {
+    const original = await Post.findOne({ _id: originalPostId, isDeleted: false });
+    if (!original) throw ApiError.notFound('Original post not found');
+
+    const targetCommunity = await Community.findOne({ name: targetCommunityName });
+    if (!targetCommunity) throw ApiError.notFound('Target community not found');
+
+    const user = await User.findById(userId);
+    if (!user) throw ApiError.notFound('User not found');
+
+    const isMember = user.joinedCommunities.some(
+      (c) => c.toString() === targetCommunity._id.toString(),
+    );
+    if (!isMember) throw ApiError.forbidden('You must join the community to crosspost');
+
+    if (original.community.toString() === targetCommunity._id.toString()) {
+      throw ApiError.badRequest('Cannot crosspost to the same community');
+    }
+
+    const now = new Date();
+    const hotScore = calculateHotScore(0, now);
+
+    const crosspost = await Post.create({
+      title: original.title,
+      type: original.type,
+      body: original.body,
+      url: original.url,
+      codeSnippet: original.codeSnippet,
+      flair: original.flair,
+      author: userId,
+      community: targetCommunity._id,
+      authorUsername: user.username,
+      communityName: targetCommunity.name,
+      hotScore,
+      crosspostFrom: {
+        postId: original._id,
+        communityName: original.communityName,
+      },
+    });
+
+    await Community.findByIdAndUpdate(targetCommunity._id, { $inc: { postCount: 1 } });
+
+    return crosspost;
+  }
+
+  async togglePin(postId: string, userId: string) {
+    const post = await Post.findById(postId);
+    if (!post) throw ApiError.notFound('Post not found');
+
+    const community = await Community.findById(post.community);
+    const isMod = community?.moderators.some((m) => m.toString() === userId);
+    if (!isMod) throw ApiError.forbidden('Only moderators can pin posts');
+
+    post.isPinned = !post.isPinned;
+    await post.save();
+    return post;
+  }
+
+  async toggleLock(postId: string, userId: string) {
+    const post = await Post.findById(postId);
+    if (!post) throw ApiError.notFound('Post not found');
+
+    const community = await Community.findById(post.community);
+    const isMod = community?.moderators.some((m) => m.toString() === userId);
+    if (!isMod) throw ApiError.forbidden('Only moderators can lock posts');
+
+    post.isLocked = !post.isLocked;
+    await post.save();
     return post;
   }
 

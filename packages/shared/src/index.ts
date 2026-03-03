@@ -16,6 +16,12 @@ export * from './types/vote.types.js';
 export * from './types/chat.types.js';
 export * from './schemas/chat.schema.js';
 
+// Notifications
+export * from './types/notification.types.js';
+
+// Reports
+export * from './types/report.types.js';
+
 // Bookmarks
 export * from './types/bookmark.types.js';
 export * from './schemas/bookmark.schema.js';

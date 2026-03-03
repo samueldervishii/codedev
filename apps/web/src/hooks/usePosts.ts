@@ -78,3 +78,40 @@ export function useDeletePost() {
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete post'),
   });
 }
+
+export function useCrosspost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, communityName }: { postId: string; communityName: string }) =>
+      postsApi.crosspost(postId, communityName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success('Crossposted successfully!');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to crosspost'),
+  });
+}
+
+export function useTogglePin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => postsApi.togglePin(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success('Post pin toggled');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to toggle pin'),
+  });
+}
+
+export function useToggleLock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => postsApi.toggleLock(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success('Post lock toggled');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to toggle lock'),
+  });
+}

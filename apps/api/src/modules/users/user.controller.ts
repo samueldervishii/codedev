@@ -2,6 +2,11 @@ import type { Request, Response } from 'express';
 import { userService } from './user.service.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 
+export const search = asyncHandler(async (req: Request, res: Response) => {
+  const result = await userService.search(req);
+  res.json({ success: true, ...result });
+});
+
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const user = await userService.getProfile(req.params.username as string);
   res.json({ success: true, data: user });

@@ -3,6 +3,7 @@ import { Vote } from './vote.model.js';
 import { Post } from '../posts/post.model.js';
 import { Comment } from '../comments/comment.model.js';
 import { User } from '../users/user.model.js';
+import { notificationService } from '../notifications/notification.service.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { calculateHotScore } from '../../utils/ranking.js';
 import type { VoteInput, BatchVoteInput } from '@devhub/shared';
@@ -118,6 +119,40 @@ export class VoteService {
       await User.findByIdAndUpdate(authorId, {
         $inc: { [karmaField]: value, karma: value },
       });
+
+      // Notify on upvote only (not downvote)
+      if (value === 1) {
+        const voter = await User.findById(userId);
+        if (voter) {
+          if (targetType === 'post') {
+            const post = await Post.findById(targetId);
+            if (post) {
+              notificationService.create({
+                user: authorId,
+                type: 'upvote',
+                message: `u/${voter.username} upvoted your post "${post.title.slice(0, 60)}"`,
+                link: `/c/${post.communityName}/posts/${targetId}`,
+                actor: userId,
+                actorUsername: voter.username,
+                relatedPost: targetId,
+              }).catch(() => {});
+            }
+          } else {
+            const comment = await Comment.findById(targetId);
+            if (comment) {
+              notificationService.create({
+                user: authorId,
+                type: 'upvote',
+                message: `u/${voter.username} upvoted your comment`,
+                link: `/c/_/posts/${comment.post.toString()}`,
+                actor: userId,
+                actorUsername: voter.username,
+                relatedComment: targetId,
+              }).catch(() => {});
+            }
+          }
+        }
+      }
     } else if (existingVote.value === value) {
       // Same vote — toggle off (remove)
       await Vote.deleteOne({ _id: existingVote._id });

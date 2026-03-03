@@ -6,6 +6,7 @@ import * as userController from './user.controller.js';
 
 const router = Router();
 
+router.get('/search', userController.search);
 router.get('/:username', userController.getProfile);
 router.patch('/me', requireAuth, validate(updateProfileSchema), userController.updateProfile);
 router.post('/me/password', requireAuth, validate(changePasswordSchema), userController.changePassword);

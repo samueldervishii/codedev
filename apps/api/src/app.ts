@@ -15,6 +15,8 @@ import { commentRoutes } from './modules/comments/comment.routes.js';
 import { voteRoutes } from './modules/votes/vote.routes.js';
 import { chatRoutes } from './modules/chat/chat.routes.js';
 import { bookmarkRoutes } from './modules/bookmarks/bookmark.routes.js';
+import { notificationRoutes } from './modules/notifications/notification.routes.js';
+import { reportRoutes } from './modules/reports/report.routes.js';
 
 const app = express();
 
@@ -52,6 +54,8 @@ app.use('/api/v1', commentRoutes);
 app.use('/api/v1', voteRoutes);
 app.use('/api/v1', chatLimiter, chatRoutes);
 app.use('/api/v1', bookmarkRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1', reportRoutes);
 
 // Error handling
 app.use(notFound);

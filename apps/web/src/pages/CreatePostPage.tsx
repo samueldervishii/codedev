@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FileText, ExternalLink, Code2 } from 'lucide-react';
 import { useCreatePost } from '../hooks/usePosts';
+import { useCommunity } from '../hooks/useCommunities';
 import { MarkdownEditor } from '../components/shared/MarkdownEditor';
 import { cn } from '../lib/utils';
-import type { CreatePostInput } from '@devhub/shared';
+import type { CreatePostInput, CommunityFlair } from '@devhub/shared';
 
 const LANGUAGES = [
   'javascript', 'typescript', 'python', 'rust', 'go', 'java',
@@ -20,6 +21,8 @@ export function CreatePostPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<PostTab>('text');
   const createPost = useCreatePost(communityName!);
+  const communityQuery = useCommunity(communityName!);
+  const flairs = communityQuery.data?.flairs ?? [];
 
   // Form state
   const [title, setTitle] = useState('');
@@ -28,6 +31,7 @@ export function CreatePostPage() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('');
   const [fileName, setFileName] = useState('');
+  const [selectedFlair, setSelectedFlair] = useState<CommunityFlair | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = (): boolean => {
@@ -48,14 +52,16 @@ export function CreatePostPage() {
     if (!validate()) return;
 
     let data: CreatePostInput;
+    const flair = selectedFlair || undefined;
     if (tab === 'text') {
-      data = { type: 'text', title: title.trim(), body: body.trim() };
+      data = { type: 'text', title: title.trim(), body: body.trim(), flair };
     } else if (tab === 'link') {
-      data = { type: 'link', title: title.trim(), url: url.trim() };
+      data = { type: 'link', title: title.trim(), url: url.trim(), flair };
     } else {
       data = {
         type: 'code',
         title: title.trim(),
+        flair,
         codeSnippet: {
           code: code.trim(),
           language,
@@ -199,6 +205,29 @@ export function CreatePostPage() {
                   )}
                 </div>
               </>
+            )}
+
+            {/* Flair selector */}
+            {flairs.length > 0 && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-400">Post Flair</label>
+                <div className="flex flex-wrap gap-2">
+                  {flairs.map((f: CommunityFlair) => (
+                    <button
+                      key={f.name}
+                      type="button"
+                      onClick={() => setSelectedFlair(selectedFlair?.name === f.name ? null : f)}
+                      className={cn(
+                        'cursor-pointer rounded-full px-3 py-1 text-xs font-medium text-white transition-opacity',
+                        selectedFlair?.name === f.name ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900' : 'opacity-70 hover:opacity-100',
+                      )}
+                      style={{ backgroundColor: f.color }}
+                    >
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="flex justify-end gap-3 pt-2">

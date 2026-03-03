@@ -1,12 +1,33 @@
 import bcrypt from 'bcryptjs';
 import { User } from './user.model.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
+import type { Request } from 'express';
 import type { UpdateProfileInput, ChangePasswordInput } from '@devhub/shared';
 
 export class UserService {
+  async search(req: Request) {
+    const query = req.query.q as string;
+    if (!query) return { data: [], pagination: buildPaginationResponse(0, 1, 20) };
+
+    const { page, limit, skip } = getPagination(req);
+    const filter: any = { $text: { $search: query } };
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select('username displayName avatarUrl karma createdAt')
+        .sort({ karma: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filter),
+    ]);
+
+    return { data: users, pagination: buildPaginationResponse(total, page, limit) };
+  }
+
   async getProfile(username: string) {
     const user = await User.findOne({ username }).select(
-      'username displayName bio avatarUrl karma postKarma commentKarma createdAt',
+      'username displayName bio avatarUrl karma postKarma commentKarma badges createdAt',
     );
     if (!user) throw ApiError.notFound('User not found');
     return user;

@@ -15,4 +15,8 @@ export const postsApi = {
     api.get('/users/me/feed', { params }),
   getUserPosts: (username: string, params?: { page?: number; limit?: number }) =>
     api.get(`/users/${username}/posts`, { params }),
+  crosspost: (id: string, communityName: string) =>
+    api.post(`/posts/${id}/crosspost`, { communityName }),
+  togglePin: (id: string) => api.patch(`/posts/${id}/pin`),
+  toggleLock: (id: string) => api.patch(`/posts/${id}/lock`),
 };

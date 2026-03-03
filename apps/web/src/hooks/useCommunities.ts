@@ -5,6 +5,14 @@ import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
 import type { CreateCommunityInput, UpdateCommunityInput } from '@devhub/shared';
 
+export function useTrendingCommunities(limit: number = 10) {
+  return useQuery({
+    queryKey: ['communities', 'trending', limit],
+    queryFn: () => communitiesApi.trending(limit),
+    select: (res) => res.data.data,
+  });
+}
+
 export function useCommunities(params?: { search?: string; tag?: string; page?: number }) {
   return useQuery({
     queryKey: ['communities', params],

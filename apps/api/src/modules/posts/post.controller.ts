@@ -41,3 +41,18 @@ export const getUserPosts = asyncHandler(async (req: Request, res: Response) => 
   const result = await postService.getUserPosts(req.params.username as string, req);
   res.json({ success: true, ...result });
 });
+
+export const crosspost = asyncHandler(async (req: Request, res: Response) => {
+  const post = await postService.crosspost(req.params.id as string, req.body.communityName, req.user!.userId);
+  res.status(201).json({ success: true, data: post });
+});
+
+export const togglePin = asyncHandler(async (req: Request, res: Response) => {
+  const post = await postService.togglePin(req.params.id as string, req.user!.userId);
+  res.json({ success: true, data: post });
+});
+
+export const toggleLock = asyncHandler(async (req: Request, res: Response) => {
+  const post = await postService.toggleLock(req.params.id as string, req.user!.userId);
+  res.json({ success: true, data: post });
+});

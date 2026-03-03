@@ -5,6 +5,14 @@ export interface JoinedCommunity {
   iconUrl: string;
 }
 
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
 export interface User {
   _id: string;
   username: string;
@@ -15,6 +23,7 @@ export interface User {
   karma: number;
   postKarma: number;
   commentKarma: number;
+  badges: string[];
   joinedCommunities: JoinedCommunity[];
   createdAt: string;
   updatedAt: string;
@@ -29,5 +38,6 @@ export interface UserProfile {
   karma: number;
   postKarma: number;
   commentKarma: number;
+  badges: string[];
   createdAt: string;
 }

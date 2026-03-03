@@ -12,6 +12,7 @@ export interface IUser extends Document {
   karma: number;
   postKarma: number;
   commentKarma: number;
+  badges: string[];
   joinedCommunities: mongoose.Types.ObjectId[];
   refreshTokenHash: string;
   createdAt: Date;
@@ -46,6 +47,7 @@ const userSchema = new Schema<IUser>(
     karma: { type: Number, default: 0 },
     postKarma: { type: Number, default: 0 },
     commentKarma: { type: Number, default: 0 },
+    badges: [{ type: String }],
     joinedCommunities: [{ type: Schema.Types.ObjectId, ref: 'Community' }],
     refreshTokenHash: { type: String, select: false },
   },
@@ -54,6 +56,7 @@ const userSchema = new Schema<IUser>(
 
 // username and email indexes already created by `unique: true`
 userSchema.index({ karma: -1 });
+userSchema.index({ username: 'text', displayName: 'text' });
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('passwordHash')) return next();

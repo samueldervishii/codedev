@@ -61,14 +61,14 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={login.isPending}
-            className="w-full rounded-full bg-brand-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
+            className="w-full cursor-pointer rounded-full bg-brand-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {login.isPending ? 'Logging in...' : 'Log In'}
           </button>
 
           <p className="text-center text-sm text-gray-400">
             New to DevHub?{' '}
-            <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300">
+            <Link to="/register" className="cursor-pointer font-medium text-brand-400 hover:text-brand-300">
               Sign Up
             </Link>
           </p>

@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Users, Calendar, Shield, Pencil, Globe, X, Settings as SettingsIcon } from 'lucide-react';
+import { Users, Calendar, Shield, Pencil, Globe, X, Settings as SettingsIcon, ShieldAlert } from 'lucide-react';
 import { useCommunity, useJoinCommunity, useLeaveCommunity, useUpdateCommunity } from '../hooks/useCommunities';
 import { useCommunityPosts } from '../hooks/usePosts';
 import { useAuthStore } from '../stores/authStore';
@@ -11,13 +11,15 @@ import { PostSortBar } from '../components/post/PostSortBar';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { LoadMoreButton } from '../components/shared/LoadMoreButton';
 import { TimeAgo } from '../components/shared/TimeAgo';
-import { formatNumber } from '../lib/utils';
+import { formatNumber, cn } from '../lib/utils';
+import { ModPanel } from '../components/mod/ModPanel';
 import type { Post } from '@devhub/shared';
 
 export function CommunityPage() {
   const { communityName } = useParams<{ communityName: string }>();
   const [sort, setSort] = useState('hot');
   const [showSettings, setShowSettings] = useState(false);
+  const [showModPanel, setShowModPanel] = useState(false);
   const communityQuery = useCommunity(communityName!);
   const posts = useCommunityPosts(communityName!, { sort });
   const { user, isAuthenticated } = useAuthStore();
@@ -27,6 +29,7 @@ export function CommunityPage() {
   const community = communityQuery.data;
   const isMember = community ? user?.joinedCommunities?.some((c) => c._id === community._id) : false;
   const isCreator = community?.creator === user?._id;
+  const isMod = community?.moderators?.includes(user?._id ?? '') ?? false;
   const allPosts = posts.data?.pages.flatMap((p) => p.data) ?? [];
   const postIds = allPosts.map((p: Post) => p._id);
   const batchBookmarks = useBatchBookmarks(postIds);
@@ -34,14 +37,17 @@ export function CommunityPage() {
 
   if (!community && !communityQuery.isLoading) {
     return (
-      <div className="flex flex-col items-center py-20 text-center">
-        <h1 className="mb-2 text-2xl font-bold text-white">Community not found</h1>
-        <p className="text-gray-400">c/{communityName} doesn't exist.</p>
-      </div>
+      <>
+        <Helmet><title>Community not found - DevHub</title></Helmet>
+        <div className="flex flex-col items-center py-20 text-center">
+          <h1 className="mb-2 text-2xl font-bold text-white">Community not found</h1>
+          <p className="text-gray-400">c/{communityName} doesn't exist.</p>
+        </div>
+      </>
     );
   }
 
-  if (communityQuery.isLoading) return <LoadingSpinner />;
+  if (communityQuery.isLoading) return <><Helmet><title>c/{communityName} - DevHub</title></Helmet><LoadingSpinner /></>;
 
   return (
     <>
@@ -71,6 +77,15 @@ export function CommunityPage() {
 
               {isAuthenticated && (
                 <div className="flex items-center gap-2">
+                  {isMod && (
+                    <button
+                      onClick={() => setShowModPanel(true)}
+                      className="flex cursor-pointer items-center gap-1.5 rounded-full border border-yellow-600/50 px-3 py-1.5 text-sm font-medium text-yellow-400 transition-colors hover:bg-yellow-900/20"
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                      <span className="hidden sm:inline">Mod Tools</span>
+                    </button>
+                  )}
                   {isCreator && (
                     <button
                       onClick={() => setShowSettings(true)}
@@ -175,9 +190,13 @@ export function CommunityPage() {
           to={`/c/${community.name}/submit`}
           className="mb-4 flex cursor-pointer items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 p-3 transition-colors hover:border-gray-700"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-bold text-gray-400">
-            {user?.username?.[0]?.toUpperCase()}
-          </div>
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt={user.username} className="h-9 w-9 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-bold text-gray-400">
+              {user?.username?.[0]?.toUpperCase()}
+            </div>
+          )}
           <div className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-500">
             Create a post...
           </div>
@@ -215,6 +234,15 @@ export function CommunityPage() {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      {/* Mod Panel */}
+      {showModPanel && community && (
+        <ModPanel
+          community={community}
+          open={showModPanel}
+          onClose={() => setShowModPanel(false)}
+        />
+      )}
     </>
   );
 }
@@ -224,11 +252,27 @@ interface CommunitySettingsModalProps {
   onClose: () => void;
 }
 
+const FLAIR_COLORS = ['#7c3aed', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#06b6d4'];
+
 function CommunitySettingsModal({ community, onClose }: CommunitySettingsModalProps) {
   const updateCommunity = useUpdateCommunity(community.name);
   const [displayName, setDisplayName] = useState(community.displayName || '');
   const [description, setDescription] = useState(community.description || '');
   const [tagsStr, setTagsStr] = useState((community.tags || []).join(', '));
+  const [flairs, setFlairs] = useState<{ name: string; color: string }[]>(community.flairs || []);
+  const [newFlairName, setNewFlairName] = useState('');
+  const [newFlairColor, setNewFlairColor] = useState('#7c3aed');
+
+  const addFlair = () => {
+    if (!newFlairName.trim() || flairs.length >= 20) return;
+    if (flairs.some((f) => f.name === newFlairName.trim())) return;
+    setFlairs([...flairs, { name: newFlairName.trim(), color: newFlairColor }]);
+    setNewFlairName('');
+  };
+
+  const removeFlair = (name: string) => {
+    setFlairs(flairs.filter((f) => f.name !== name));
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,7 +281,7 @@ function CommunitySettingsModal({ community, onClose }: CommunitySettingsModalPr
       .map((t: string) => t.trim())
       .filter(Boolean);
     updateCommunity.mutate(
-      { displayName: displayName || undefined, description, tags },
+      { displayName: displayName || undefined, description, tags, flairs },
       { onSuccess: () => onClose() },
     );
   };
@@ -293,6 +337,45 @@ function CommunitySettingsModal({ community, onClose }: CommunitySettingsModalPr
               className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-brand-500"
             />
             <p className="mt-1 text-xs text-gray-600">Comma-separated, max 10 tags</p>
+          </div>
+
+          {/* Post Flairs */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-400">Post Flairs</label>
+            {flairs.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {flairs.map((f) => (
+                  <span key={f.name} className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ backgroundColor: f.color }}>
+                    {f.name}
+                    <button type="button" onClick={() => removeFlair(f.name)} className="cursor-pointer ml-0.5 hover:opacity-70">&times;</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newFlairName}
+                onChange={(e) => setNewFlairName(e.target.value)}
+                maxLength={30}
+                placeholder="Flair name"
+                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-brand-500"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addFlair(); } }}
+              />
+              <div className="flex gap-1">
+                {FLAIR_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setNewFlairColor(c)}
+                    className={cn('h-5 w-5 cursor-pointer rounded-full', newFlairColor === c && 'ring-2 ring-white ring-offset-1 ring-offset-gray-900')}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <button type="button" onClick={addFlair} className="cursor-pointer rounded-lg bg-gray-700 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-600">Add</button>
+            </div>
+            <p className="mt-1 text-xs text-gray-600">{flairs.length}/20 flairs</p>
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-800 pt-4">

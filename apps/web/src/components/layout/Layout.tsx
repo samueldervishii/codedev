@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useRestoreSession } from '../../hooks/useAuth';
@@ -33,6 +34,7 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-950">
+      <Helmet defaultTitle="DevHub" titleTemplate="%s" />
       <NavigationProgress />
       <Header />
       <Sidebar />

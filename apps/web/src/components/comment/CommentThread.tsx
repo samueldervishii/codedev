@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { MessageSquare, Trash2, Flag } from 'lucide-react';
 import { VoteButtons } from '../vote/VoteButtons';
 import { TimeAgo } from '../shared/TimeAgo';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { CommentForm } from './CommentForm';
 import { useCreateComment, useDeleteComment } from '../../hooks/useComments';
 import { useVoteComment } from '../../hooks/useVotes';
+import { useReportComment } from '../../hooks/useModTools';
 import { useAuthStore } from '../../stores/authStore';
 import { formatNumber } from '../../lib/utils';
 import type { Comment } from '@devhub/shared';
@@ -31,6 +32,7 @@ export function CommentThread({ comment, postId, depth = 0 }: CommentThreadProps
   const createComment = useCreateComment(postId);
   const deleteComment = useDeleteComment(postId);
   const voteComment = useVoteComment(postId);
+  const reportComment = useReportComment();
 
   const isAuthor = user?._id === comment.author;
 
@@ -114,6 +116,19 @@ export function CommentThread({ comment, postId, depth = 0 }: CommentThreadProps
                     }}
                   />
                 </>
+              )}
+              {isAuthenticated && !isAuthor && !comment.isDeleted && (
+                <button
+                  onClick={() => {
+                    const reason = prompt('Reason for reporting this comment:');
+                    if (reason?.trim()) {
+                      reportComment.mutate({ commentId: comment._id, reason: reason.trim() });
+                    }
+                  }}
+                  className="flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-800 hover:text-gray-300"
+                >
+                  <Flag className="h-3.5 w-3.5" />
+                </button>
               )}
             </div>
 

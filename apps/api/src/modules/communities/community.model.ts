@@ -6,10 +6,12 @@ export interface ICommunity extends Document {
   displayName: string;
   description: string;
   rules: { title: string; description: string }[];
+  flairs: { name: string; color: string }[];
   iconUrl: string;
   bannerUrl: string;
   creator: mongoose.Types.ObjectId;
   moderators: mongoose.Types.ObjectId[];
+  bannedUsers: mongoose.Types.ObjectId[];
   memberCount: number;
   postCount: number;
   tags: string[];
@@ -39,9 +41,16 @@ const communitySchema = new Schema<ICommunity>(
     bannerUrl: { type: String, default: '' },
     creator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     moderators: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    bannedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     memberCount: { type: Number, default: 0 },
     postCount: { type: Number, default: 0 },
     tags: [{ type: String, maxlength: 30 }],
+    flairs: [
+      {
+        name: { type: String, maxlength: 30 },
+        color: { type: String, maxlength: 20, default: '#7c3aed' },
+      },
+    ],
   },
   { timestamps: true },
 );

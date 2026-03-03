@@ -1,7 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { commentsApi } from '../api/comments.api';
 import toast from 'react-hot-toast';
 import type { CreateCommentInput } from '@devhub/shared';
+
+export function useSearchComments(query: string) {
+  return useInfiniteQuery({
+    queryKey: ['comments', 'search', query],
+    queryFn: ({ pageParam = 1 }) =>
+      commentsApi.search({ q: query, page: pageParam }).then((r) => r.data),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination?.hasNext ? lastPage.pagination.page + 1 : undefined,
+    enabled: !!query,
+  });
+}
 
 export function useComments(postId: string, sort?: string) {
   return useQuery({

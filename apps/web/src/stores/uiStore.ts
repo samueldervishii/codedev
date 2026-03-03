@@ -4,9 +4,12 @@ export type Theme = 'dark' | 'light';
 
 interface UiState {
   sidebarOpen: boolean;
+  mobileSidebarOpen: boolean;
   theme: Theme;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
+  setMobileSidebarOpen: (open: boolean) => void;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
 }
@@ -36,6 +39,7 @@ if (typeof window !== 'undefined') {
 
 export const useUiStore = create<UiState>((set) => ({
   sidebarOpen: defaultOpen,
+  mobileSidebarOpen: false,
   theme: defaultTheme,
   toggleSidebar: () =>
     set((s) => {
@@ -47,6 +51,8 @@ export const useUiStore = create<UiState>((set) => ({
     localStorage.setItem('sidebar-open', String(open));
     set({ sidebarOpen: open });
   },
+  toggleMobileSidebar: () => set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen })),
+  setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
   setTheme: (theme) => {
     applyTheme(theme);
     set({ theme });

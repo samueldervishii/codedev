@@ -2,11 +2,12 @@ import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Trophy, MessageSquare, FileText, Bookmark } from 'lucide-react';
+import { Calendar, Trophy, MessageSquare, FileText, Bookmark, Award } from 'lucide-react';
 import { usersApi } from '../api/users.api';
 import { postsApi } from '../api/posts.api';
 import { commentsApi } from '../api/comments.api';
 import { PostCard } from '../components/post/PostCard';
+import { BadgeDisplay } from '../components/shared/BadgeDisplay';
 import { useBatchBookmarks, useUserBookmarks } from '../hooks/useBookmarks';
 import { useAuthStore } from '../stores/authStore';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
@@ -52,14 +53,17 @@ export function UserProfilePage() {
   const batchBookmarks = useBatchBookmarks(userPostIds);
   const bookmarkMap = batchBookmarks.data?.bookmarks ?? {};
 
-  if (profile.isLoading) return <LoadingSpinner />;
+  if (profile.isLoading) return <><Helmet><title>u/{username} - DevHub</title></Helmet><LoadingSpinner /></>;
 
   if (!profile.data) {
     return (
-      <div className="flex flex-col items-center py-20 text-center">
-        <h1 className="mb-2 text-2xl font-bold text-white">User not found</h1>
-        <p className="text-gray-400">u/{username} doesn't exist.</p>
-      </div>
+      <>
+        <Helmet><title>User not found - DevHub</title></Helmet>
+        <div className="flex flex-col items-center py-20 text-center">
+          <h1 className="mb-2 text-2xl font-bold text-white">User not found</h1>
+          <p className="text-gray-400">u/{username} doesn't exist.</p>
+        </div>
+      </>
     );
   }
 
@@ -77,9 +81,13 @@ export function UserProfilePage() {
         <div className="h-20 rounded-t-xl bg-gradient-to-r from-brand-900 to-brand-700" />
         <div className="p-4">
           <div className="flex items-start gap-4">
-            <div className="-mt-10 flex h-20 w-20 items-center justify-center rounded-full border-4 border-gray-900 bg-brand-800 text-3xl font-bold text-brand-300">
-              {u.username[0].toUpperCase()}
-            </div>
+            {u.avatarUrl ? (
+              <img src={u.avatarUrl} alt={u.username} className="-mt-10 h-20 w-20 rounded-full border-4 border-gray-900 object-cover" />
+            ) : (
+              <div className="-mt-10 flex h-20 w-20 items-center justify-center rounded-full border-4 border-gray-900 bg-brand-800 text-3xl font-bold text-brand-300">
+                {u.username[0].toUpperCase()}
+              </div>
+            )}
             <div className="mt-1">
               <h1 className="text-xl font-bold text-white">
                 {u.displayName || u.username}
@@ -108,6 +116,17 @@ export function UserProfilePage() {
               Joined <TimeAgo date={u.createdAt} />
             </span>
           </div>
+
+          {/* Badges */}
+          {u.badges && u.badges.length > 0 && (
+            <div className="mt-4 border-t border-gray-800 pt-4">
+              <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-400">
+                <Award className="h-3.5 w-3.5" />
+                Badges
+              </h3>
+              <BadgeDisplay badgeIds={u.badges} variant="grid" />
+            </div>
+          )}
         </div>
       </div>
 

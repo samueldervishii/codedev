@@ -73,14 +73,14 @@ export function RegisterPage() {
           <button
             type="submit"
             disabled={signup.isPending}
-            className="w-full rounded-full bg-brand-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
+            className="w-full cursor-pointer rounded-full bg-brand-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {signup.isPending ? 'Creating account...' : 'Sign Up'}
           </button>
 
           <p className="text-center text-sm text-gray-400">
             Already a member?{' '}
-            <Link to="/login" className="font-medium text-brand-400 hover:text-brand-300">
+            <Link to="/login" className="cursor-pointer font-medium text-brand-400 hover:text-brand-300">
               Log In
             </Link>
           </p>

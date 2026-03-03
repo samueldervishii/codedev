@@ -101,6 +101,14 @@ export class CommunityService {
     return { joined: true };
   }
 
+  async getTrending(limit: number = 10) {
+    const communities = await Community.find()
+      .sort({ memberCount: -1 })
+      .limit(Math.min(limit, 20))
+      .select('name displayName description memberCount postCount iconUrl');
+    return communities;
+  }
+
   async leave(name: string, userId: string) {
     const community = await Community.findOne({ name });
     if (!community) throw ApiError.notFound('Community not found');
@@ -119,6 +127,85 @@ export class CommunityService {
     await Community.findByIdAndUpdate(community._id, { $inc: { memberCount: -1 } });
 
     return { joined: false };
+  }
+
+  async banUser(communityName: string, targetUsername: string, userId: string) {
+    const community = await Community.findOne({ name: communityName });
+    if (!community) throw ApiError.notFound('Community not found');
+
+    const isMod = community.moderators.some((m) => m.toString() === userId);
+    if (!isMod) throw ApiError.forbidden('Only moderators can ban users');
+
+    const target = await User.findOne({ username: targetUsername });
+    if (!target) throw ApiError.notFound('User not found');
+
+    if (community.creator.toString() === target._id.toString()) {
+      throw ApiError.badRequest('Cannot ban the community creator');
+    }
+
+    await Community.findByIdAndUpdate(community._id, {
+      $addToSet: { bannedUsers: target._id },
+      $pull: { moderators: target._id },
+    });
+
+    return { banned: true };
+  }
+
+  async unbanUser(communityName: string, targetUsername: string, userId: string) {
+    const community = await Community.findOne({ name: communityName });
+    if (!community) throw ApiError.notFound('Community not found');
+
+    const isMod = community.moderators.some((m) => m.toString() === userId);
+    if (!isMod) throw ApiError.forbidden('Only moderators can unban users');
+
+    const target = await User.findOne({ username: targetUsername });
+    if (!target) throw ApiError.notFound('User not found');
+
+    await Community.findByIdAndUpdate(community._id, {
+      $pull: { bannedUsers: target._id },
+    });
+
+    return { banned: false };
+  }
+
+  async addModerator(communityName: string, targetUsername: string, userId: string) {
+    const community = await Community.findOne({ name: communityName });
+    if (!community) throw ApiError.notFound('Community not found');
+
+    if (community.creator.toString() !== userId) {
+      throw ApiError.forbidden('Only the creator can add moderators');
+    }
+
+    const target = await User.findOne({ username: targetUsername });
+    if (!target) throw ApiError.notFound('User not found');
+
+    await Community.findByIdAndUpdate(community._id, {
+      $addToSet: { moderators: target._id },
+    });
+
+    return { moderator: true };
+  }
+
+  async removeModerator(communityName: string, targetUsername: string, userId: string) {
+    const community = await Community.findOne({ name: communityName });
+    if (!community) throw ApiError.notFound('Community not found');
+
+    if (community.creator.toString() !== userId) {
+      throw ApiError.forbidden('Only the creator can remove moderators');
+    }
+
+    const target = await User.findOne({ username: targetUsername });
+    if (!target) throw ApiError.notFound('User not found');
+
+    if (target._id.toString() === community.creator.toString()) {
+      throw ApiError.badRequest('Cannot remove the creator as moderator');
+    }
+
+    await Community.findByIdAndUpdate(community._id, {
+      $pull: { moderators: target._id },
+    });
+
+    return { moderator: false };
   }
 }
 

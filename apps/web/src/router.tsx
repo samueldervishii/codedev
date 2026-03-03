@@ -21,6 +21,7 @@ import { TermsPage } from './pages/TermsPage';
 import { AccessibilityPage } from './pages/AccessibilityPage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { AskPage } from './pages/AskPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings',
         element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+      },
+      {
+        path: 'notifications',
+        element: <ProtectedRoute><NotificationsPage /></ProtectedRoute>,
       },
       {
         path: 'bookmarks',

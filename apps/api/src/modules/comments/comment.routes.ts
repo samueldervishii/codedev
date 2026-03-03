@@ -29,6 +29,9 @@ router.patch(
 );
 router.delete('/comments/:id', validateObjectId('id'), requireAuth, commentController.remove);
 
+// Search comments
+router.get('/comments/search', commentController.search);
+
 // User comments
 router.get('/users/:username/comments', commentController.getUserComments);
 
