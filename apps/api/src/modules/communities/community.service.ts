@@ -2,6 +2,7 @@ import { Community } from './community.model.js';
 import { User } from '../users/user.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
+import { notificationService } from '../notifications/notification.service.js';
 import type { Request } from 'express';
 import type { CreateCommunityInput, UpdateCommunityInput } from '@devhub/shared';
 
@@ -97,6 +98,16 @@ export class CommunityService {
     if (!updated) throw ApiError.badRequest('Already a member');
 
     await Community.findByIdAndUpdate(community._id, { $inc: { memberCount: 1 } });
+
+    // Notify community creator
+    notificationService.create({
+      user: community.creator.toString(),
+      type: 'community_join',
+      message: `${updated.username} joined c/${community.name}`,
+      link: `/c/${community.name}`,
+      actor: userId,
+      actorUsername: updated.username,
+    });
 
     return { joined: true };
   }

@@ -5,6 +5,7 @@ import * as notificationController from './notification.controller.js';
 
 const router = Router();
 
+router.get('/stream', notificationController.stream); // Auth via query param
 router.get('/', requireAuth, notificationController.list);
 router.get('/unread-count', requireAuth, notificationController.unreadCount);
 router.patch('/:id/read', validateObjectId('id'), requireAuth, notificationController.markRead);

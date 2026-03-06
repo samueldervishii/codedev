@@ -4,6 +4,7 @@ import { User } from '../users/user.model.js';
 import { Comment } from '../comments/comment.model.js';
 import { Vote } from '../votes/vote.model.js';
 import { badgeService } from '../badges/badge.service.js';
+import { notificationService } from '../notifications/notification.service.js';
 import { Bookmark } from '../bookmarks/bookmark.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
@@ -37,6 +38,17 @@ export class PostService {
     });
 
     await Community.findByIdAndUpdate(community._id, { $inc: { postCount: 1 } });
+
+    // Notify community creator about new post
+    notificationService.create({
+      user: community.creator.toString(),
+      type: 'new_post',
+      message: `${user.username} posted "${post.title}" in c/${community.name}`,
+      link: `/c/${community.name}/posts/${post._id}`,
+      actor: userId,
+      actorUsername: user.username,
+      relatedPost: post._id.toString(),
+    });
 
     // Check for new badges
     badgeService.checkAndAward(userId).catch(() => {});

@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FileText, ExternalLink, Code2 } from 'lucide-react';
 import { useCreatePost } from '../hooks/usePosts';
 import { useCommunity } from '../hooks/useCommunities';
@@ -96,7 +96,7 @@ export function CreatePostPage() {
         <h1 className="mb-1 text-xl font-bold text-white">Create a Post</h1>
         <p className="mb-6 text-sm text-gray-400">
           Posting to{' '}
-          <span className="font-medium text-brand-400">c/{communityName}</span>
+          <Link to={`/c/${communityName}`} className="cursor-pointer font-medium text-brand-400 hover:underline">c/{communityName}</Link>
         </p>
 
         <div className="rounded-xl border border-gray-800 bg-gray-900">

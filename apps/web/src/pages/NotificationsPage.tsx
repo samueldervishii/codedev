@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Bell, MessageSquare, ArrowBigUp, AtSign, CheckCheck } from 'lucide-react';
+import { Bell, MessageSquare, ArrowBigUp, AtSign, CheckCheck, UserPlus, FileText } from 'lucide-react';
 import { useNotifications, useMarkRead, useMarkAllRead, useUnreadCount } from '../hooks/useNotifications';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { LoadMoreButton } from '../components/shared/LoadMoreButton';
@@ -12,6 +12,8 @@ const typeIcons: Record<string, React.ReactNode> = {
   post_comment: <MessageSquare className="h-5 w-5 text-brand-400" />,
   upvote: <ArrowBigUp className="h-5 w-5 text-green-400" />,
   mention: <AtSign className="h-5 w-5 text-yellow-400" />,
+  community_join: <UserPlus className="h-5 w-5 text-emerald-400" />,
+  new_post: <FileText className="h-5 w-5 text-sky-400" />,
 };
 
 export function NotificationsPage() {

@@ -176,14 +176,14 @@ export function PostPage() {
               </div>
               <Link
                 to={`/c/${p.communityName}`}
-                className="font-semibold text-gray-200 hover:underline"
+                className="cursor-pointer font-semibold text-gray-200 hover:underline"
               >
                 c/{p.communityName}
               </Link>
               <span className="text-gray-600">&middot;</span>
               <span>
                 Posted by{' '}
-                <Link to={`/u/${p.authorUsername}`} className="hover:underline">
+                <Link to={`/u/${p.authorUsername}`} className="cursor-pointer hover:underline">
                   u/{p.authorUsername}
                 </Link>
               </span>

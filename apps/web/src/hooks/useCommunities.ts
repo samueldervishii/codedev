@@ -68,16 +68,56 @@ export function useJoinCommunity() {
 
   return useMutation({
     mutationFn: (name: string) => communitiesApi.join(name),
-    onSuccess: async (_res, name) => {
+    onMutate: async (name) => {
+      const user = useAuthStore.getState().user;
+      if (!user) return;
+
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({ queryKey: ['communities', name] });
+
+      const cached: any = queryClient.getQueryData(['communities', name]);
+      const community = cached?.data?.data;
+      if (!community) return;
+
+      const previousJoined = user.joinedCommunities;
+      const previousCommunity = cached;
+
+      // Optimistic: update joinedCommunities
+      updateUser({
+        joinedCommunities: [
+          ...previousJoined,
+          { _id: community._id, name: community.name, displayName: community.displayName || '', iconUrl: community.iconUrl || '' },
+        ],
+      });
+
+      // Optimistic: bump memberCount in community cache
+      queryClient.setQueryData(['communities', name], {
+        ...cached,
+        data: {
+          ...cached.data,
+          data: { ...community, memberCount: (community.memberCount ?? 0) + 1 },
+        },
+      });
+
+      return { previousJoined, previousCommunity };
+    },
+    onError: (err: any, name, context) => {
+      if (context?.previousJoined) {
+        updateUser({ joinedCommunities: context.previousJoined });
+      }
+      if (context?.previousCommunity) {
+        queryClient.setQueryData(['communities', name], context.previousCommunity);
+      }
+      toast.error(err.response?.data?.message || 'Failed to join');
+    },
+    onSettled: async (_data, _error, name) => {
       queryClient.invalidateQueries({ queryKey: ['communities', name] });
-      // Re-fetch user to update joinedCommunities in sidebar
       try {
         const res = await authApi.getMe();
         updateUser(res.data.data);
       } catch {}
-      toast.success('Joined community!');
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to join'),
+    onSuccess: () => toast.success('Joined community!'),
   });
 }
 
@@ -87,15 +127,51 @@ export function useLeaveCommunity() {
 
   return useMutation({
     mutationFn: (name: string) => communitiesApi.leave(name),
-    onSuccess: async (_res, name) => {
+    onMutate: async (name) => {
+      const user = useAuthStore.getState().user;
+      if (!user) return;
+
+      await queryClient.cancelQueries({ queryKey: ['communities', name] });
+
+      const cached: any = queryClient.getQueryData(['communities', name]);
+      const community = cached?.data?.data;
+      if (!community) return;
+
+      const previousJoined = user.joinedCommunities;
+      const previousCommunity = cached;
+
+      // Optimistic: remove from joinedCommunities
+      updateUser({
+        joinedCommunities: previousJoined.filter((c) => c._id !== community._id),
+      });
+
+      // Optimistic: decrement memberCount in community cache
+      queryClient.setQueryData(['communities', name], {
+        ...cached,
+        data: {
+          ...cached.data,
+          data: { ...community, memberCount: Math.max(0, (community.memberCount ?? 1) - 1) },
+        },
+      });
+
+      return { previousJoined, previousCommunity };
+    },
+    onError: (err: any, name, context) => {
+      if (context?.previousJoined) {
+        updateUser({ joinedCommunities: context.previousJoined });
+      }
+      if (context?.previousCommunity) {
+        queryClient.setQueryData(['communities', name], context.previousCommunity);
+      }
+      toast.error(err.response?.data?.message || 'Failed to leave');
+    },
+    onSettled: async (_data, _error, name) => {
       queryClient.invalidateQueries({ queryKey: ['communities', name] });
-      // Re-fetch user to update joinedCommunities in sidebar
       try {
         const res = await authApi.getMe();
         updateUser(res.data.data);
       } catch {}
-      toast.success('Left community');
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to leave'),
+    onSuccess: () => toast.success('Left community'),
   });
 }

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { GuestRoute } from './components/auth/GuestRoute';
 import { HomePage } from './pages/HomePage';
 import { ExplorePage } from './pages/ExplorePage';
 import { TrendingPage } from './pages/TrendingPage';
@@ -32,8 +33,8 @@ export const router = createBrowserRouter([
       { path: 'explore', element: <ExplorePage /> },
       { path: 'trending', element: <TrendingPage /> },
       { path: 'search', element: <SearchPage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
+      { path: 'login', element: <GuestRoute><LoginPage /></GuestRoute> },
+      { path: 'register', element: <GuestRoute><RegisterPage /></GuestRoute> },
       { path: 'c/:communityName', element: <CommunityPage /> },
       {
         path: 'c/:communityName/submit',

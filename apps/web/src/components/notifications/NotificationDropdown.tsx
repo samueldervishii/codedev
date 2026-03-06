@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, MessageSquare, ArrowBigUp, AtSign } from 'lucide-react';
+import { Bell, Check, MessageSquare, ArrowBigUp, AtSign, UserPlus, FileText } from 'lucide-react';
 import { useUnreadCount, useNotifications, useMarkRead, useMarkAllRead } from '../../hooks/useNotifications';
 import { TimeAgo } from '../shared/TimeAgo';
 import type { Notification } from '@devhub/shared';
@@ -10,6 +10,8 @@ const typeIcons: Record<string, React.ReactNode> = {
   post_comment: <MessageSquare className="h-4 w-4 text-brand-400" />,
   upvote: <ArrowBigUp className="h-4 w-4 text-green-400" />,
   mention: <AtSign className="h-4 w-4 text-yellow-400" />,
+  community_join: <UserPlus className="h-4 w-4 text-emerald-400" />,
+  new_post: <FileText className="h-4 w-4 text-sky-400" />,
 };
 
 export function NotificationDropdown() {

@@ -1,12 +1,32 @@
 import { Notification } from './notification.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPagination, buildPaginationResponse } from '../../utils/pagination.js';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+
+// SSE client registry
+const sseClients = new Map<string, Set<Response>>();
+
+export function addSseClient(userId: string, res: Response) {
+  if (!sseClients.has(userId)) sseClients.set(userId, new Set());
+  sseClients.get(userId)!.add(res);
+  res.on('close', () => {
+    sseClients.get(userId)?.delete(res);
+    if (sseClients.get(userId)?.size === 0) sseClients.delete(userId);
+  });
+}
+
+function pushToUser(userId: string, event: string, data: any) {
+  const clients = sseClients.get(userId);
+  if (!clients) return;
+  for (const res of clients) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+}
 
 export class NotificationService {
   async create(data: {
     user: string;
-    type: 'comment_reply' | 'post_comment' | 'upvote' | 'mention';
+    type: 'comment_reply' | 'post_comment' | 'upvote' | 'mention' | 'community_join' | 'new_post';
     message: string;
     link: string;
     actor: string;
@@ -17,7 +37,13 @@ export class NotificationService {
     // Don't notify yourself
     if (data.user === data.actor) return null;
 
-    return Notification.create(data);
+    const notification = await Notification.create(data);
+
+    // Push to connected SSE clients
+    const unreadCount = await this.getUnreadCount(data.user);
+    pushToUser(data.user, 'notification', { notification, unreadCount });
+
+    return notification;
   }
 
   async getUserNotifications(userId: string, req: Request) {

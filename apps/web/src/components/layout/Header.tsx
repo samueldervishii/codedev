@@ -6,8 +6,10 @@ import { useLogout } from '../../hooks/useAuth';
 import { formatNumber } from '../../lib/utils';
 import { useState, useRef, useEffect } from 'react';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
+import { useNotificationStream } from '../../hooks/useNotifications';
 
 export function Header() {
+  useNotificationStream();
   const { user, isAuthenticated } = useAuthStore();
   const { theme, toggleTheme, toggleMobileSidebar } = useUiStore();
   const logout = useLogout();
